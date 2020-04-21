@@ -4,6 +4,7 @@ from model import LSTM
 import random
 import torch.optim as optim
 import torch.nn as nn
+import matplotlib.pyplot as plt
 from nltk.tokenize import word_tokenize
 import nltk
 nltk.download('punkt')
@@ -11,6 +12,7 @@ nltk.download('averaged_perceptron_tagger')
 
 SEED = 1234
 BATCH_SIZE = 64
+N_EPOCHS = 10
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
@@ -90,9 +92,9 @@ def classify(tokenizerType):
     model = model.to(device)
     criterion = criterion.to(device)
 
-    N_EPOCHS = 10
-
     best_valid_loss = float('inf')
+    train_loss_list = []
+    valid_loss_list = []
 
     for epoch in range(N_EPOCHS):
         
@@ -103,17 +105,29 @@ def classify(tokenizerType):
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), 'best-model.pt')
         
-        #print("Epoch: ",epoch+1)
-        #print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
-        #print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
+        train_loss_list.append(train_loss)
+        valid_loss_list.append(valid_loss)
+    
+    print(tokenizerType + ":")
+    plotLoss(train_loss_list, valid_loss_list)
 
     model.load_state_dict(torch.load('best-model.pt'))
 
     test_loss, test_acc = evaluate(model, test_iterator, criterion)
 
-    print(tokenizerType + ":")
     print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
     print("\n")
+
+#Plot training and validation loss
+def plotLoss(train_loss, valid_loss):
+    epochs = range(N_EPOCHS)
+    plt.plot(epochs, train_loss, 'g', label='Training loss')
+    plt.plot(epochs, valid_loss, 'b', label='validation loss')
+    plt.title('Training and Validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
 
 #Custom tokenizer
 def tokenizer(text, exceptPOS): # create a tokenizer function
@@ -142,7 +156,7 @@ def tokenizerWithAll(text):
     return tokenizer(text.lower(), None)
 
 tokenizerOptions = {
-    "All" : tokenizerWithAll,
+    "Full_Data" : tokenizerWithAll,
     "No_Nouns" : tokenizerExceptNouns,
     "No_Verbs" : tokenizerExceptVerbs,
     "No_Adjectives" : tokenizerExceptAdjectives
