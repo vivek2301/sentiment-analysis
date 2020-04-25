@@ -28,7 +28,7 @@ def classify(tokenizerType):
     LABEL = data.LabelField(dtype=torch.float, sequential=False, use_vocab=False)
     fields = [('text', TEXT), ('label', LABEL)]
     train_data = data.TabularDataset(
-        path='SJ_Unsupervised_NLP_data.txt',
+        path='amazon_reviews.txt',
         format='tsv',
         fields=fields
     )
